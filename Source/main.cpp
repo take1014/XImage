@@ -17,8 +17,9 @@ int main (void){
 
 
 	// error = ximg.InverseImage();
-	error = ximg.MakeHistgramImage();
-
+	// error = ximg.MakeHistgramImage();
+	// error = ximg.LinerTransformation();
+	error = ximg.SmoothImage(16);
 	printf("Output Image File ===>");
 	scanf("%s",OutputFileName);
 

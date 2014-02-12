@@ -19,6 +19,8 @@ class DLL_CIMPORT XImage{
 		int SaveImage(char *FilePath);		// イメージファイル出力用関数
 		int InverseImage();			// イメージの反転処理を行う関数
 		int MakeHistgramImage();		// ヒストグラムイメージ作成関数
+		int LinerTransformation();		// ヒストグラムの線形変換を行ったイメージを出力する関数
+		int SmoothImage(int GrayLevel);		// ヒストグラムを平滑化したイメージを出力する
 };
 
 #endif

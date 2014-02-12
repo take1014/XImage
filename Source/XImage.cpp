@@ -74,8 +74,6 @@ int XImage::ReadImage(char *FilePath){
 	return OK;
 }
 
-
-
 // イメージファイル保存
 int XImage::SaveImage(char *FileName){
 	FILE *fop;	// ファイルオープン用のポインタ
@@ -159,6 +157,7 @@ int XImage::MakeHistgramImage(){
 			Histgram[image1[y][x]]++;
 		}
 	}
+
 	MaxFrequency = INT_MIN;
 
 	for(int i = 0; i < GRAYLEVEL; i++){
@@ -188,5 +187,90 @@ int XImage::MakeHistgramImage(){
 	image2 = image;
 
 	return ErrorCode;
+
+}
+
+int XImage::LinerTransformation(){
+	int ErrorCode = OK;
+	int min,max;		// 階調値の最大値、最小値
+
+	// 階調値の最大値、最小値を求める
+	min = INT_MAX;
+	max = INT_MIN;
+
+	for(int y = 0; y < y_size1; y++){
+		for(int x = 0; x < x_size1; x++){
+			if(image1[y][x] < min){
+				min = image1[y][x];
+			}
+			if(image1[y][x] > max){
+				max = image1[y][x];
+			}
+		}
+	}
+
+	// イメージ出力
+	x_size2 = x_size1;
+	y_size2 = y_size1;
+	
+	// 出力用イメージ画像格納用
+	unsigned char **image = MakeImageStruct(x_size2,y_size2);
+	for(int y = 0; y < y_size2; y++){
+		for(int x = 0;x < x_size2; x++){
+			image[y][x] = (unsigned char)((image1[y][x] - min) * MAX_BRIGHTNESS / (double)(max - min));
+		}
+	}
+
+	image2 = image;
+
+	return ErrorCode;
+}
+
+int XImage::SmoothImage(int GrayLevel){
+	int ErrorCode = OK;
+	long int hist1[GRAYLEVEL],hist2[GRAYLEVEL];
+	int TransTable[GRAYLEVEL];	// 濃度変換表
+	long int TargetValue;		// 変換後の頻度の目標値
+	int gray;			// 階調用作業変数
+	double GrayStep;		// 表現階調間隔
+
+	// 元画像のヒストグラム作成
+	for(int i = 0; i < GRAYLEVEL; i++){
+		for(int y = 0; y < y_size1; y++){
+			for(int x = 0; x < x_size1; x++){
+				hist1[image1[y][x]]++;
+			}
+		}
+	}
+
+	// ヒストグラム変換表の作成
+	for(int i = 0; i < GRAYLEVEL; i++){
+		if(abs(TargetValue - hist2[gray]) < abs(TargetValue - (hist2[gray] + hist1[i]))){
+			gray++;
+			if(gray >= GrayLevel){
+				gray = GrayLevel -1;
+			}
+		}
+		TransTable[i] = gray;
+		hist2[gray] = hist2[gray] + hist1[i];
+	}
+
+	// ヒストグラムを平滑化したイメージを出力する
+	x_size2 = x_size1;
+	y_size2 = y_size1;
+	// 出力用イメージ画像格納用
+	unsigned char **image = MakeImageStruct(x_size2,y_size2);
+
+	GrayStep = (double)GRAYLEVEL / GrayLevel;
+	for(int y = 0; y < y_size2; y++){
+		for(int x = 0;x < x_size2; x++){
+			image[y][x] = (unsigned char)(TransTable[image1[y][x]]*GrayStep);
+		}
+	}
+
+	image2 = image;
+
+	return ErrorCode;
+	
 
 }
