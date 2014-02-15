@@ -108,7 +108,8 @@ unsigned char** XImage:: MakeImageStruct(int xsize,int ysize){
 	// メモリの動的確保
 	unsigned char **image =(unsigned char**)malloc(sizeof(unsigned char*)*ysize);
 	for(int i = 0; i < ysize; i++){
-		image[i] = new unsigned char[xsize];
+		// image[i] = new unsigned char[xsize];
+		image[i] = (unsigned char*)malloc(xsize);
 	}
 
 	return image;
@@ -271,6 +272,90 @@ int XImage::SmoothImage(int GrayLevel){
 	image2 = image;
 
 	return ErrorCode;
-	
+}
+
+int XImage::MakeDitherImage(int DitherType){
+	int ErrorCode = OK;
+	double width;		// 階調値の単位幅
+	int new_gray;		// 新しい階調
+	int x_block,y_block;	// 横・縦のブロック数
+	int **DitherMatrix;	// ディザ行列格納用配列
+	int BlockSize;		// ブロックの縦横数
+	int NewLevel;		// 疑似階調数
+	int x,y,i,j,m,n;	// 制御変数
+
+	switch(DitherType){
+		case Bayer:
+		case Halftone:
+		case Spiral:
+			BlockSize =  4;
+			NewLevel  = 16;
+			DitherMatrix =(int**)malloc(sizeof(int*)*4);
+			for(int i = 0; i < 4; i++){
+				DitherMatrix[i] = (int*)malloc(4);
+			}
+			for(y = 0; y < BlockSize; y++){
+				for(x = 0; x < BlockSize; x++){
+					if(DitherType == Bayer){
+						DitherMatrix[y][x] = BayerMatrix[y][x];
+					}
+					else if(DitherType == Halftone){
+						DitherMatrix[y][x] = HalftoneMatrix[y][x];
+					}
+					else{
+						DitherMatrix[y][x] = SpiralMatrix[y][x];
+					}
+				}
+			}
+			break;
+		default:
+			return ERR_MakeDitherImage_TYPE;
+	}
+
+	// 縦横がBlockSizeの倍数か確認する
+	if(x_size1 % BlockSize != 0 || y_size1 % BlockSize != 0){
+		return ERR_MakeDitherImage_SIZE;
+	}
+
+	// 階調変換画像の作成
+	width = MAX_BRIGHTNESS / (double)NewLevel;
+	x_size2 = x_size1;
+	y_size2 = y_size1;
+	unsigned char **image = MakeImageStruct(x_size2,y_size2);
+	for(y = 0; y < y_size1; y++){
+		for(x = 0; x < x_size1; x++){
+			new_gray = (int)(image1[y][x] / width);
+			if(new_gray > NewLevel - 1){
+				new_gray = NewLevel -1;
+			}
+			image[y][x] = (unsigned char)new_gray;
+		}
+	}
+
+	// ディザ画像の作成
+	x = 0;
+	y = 0;
+	x_block = x_size1 / BlockSize;		// 横のブロック数
+	y_block = y_size1 / BlockSize;		// 縦のブロック数
+	for(i = 0; i < y_block; i++){
+		for(j = 0; j < x_block; j++){
+			x = BlockSize * j;
+			y = BlockSize * i;
+			for(m = 0; m < BlockSize; m ++){
+				for(n = 0; n < BlockSize; n++){
+					if(image[y + m][x + n] <= DitherMatrix[m][n]){
+						image[y + m][x + n] = 0;
+					}
+					else{
+						image[y + m][x + n] = MAX_BRIGHTNESS;
+					}
+				}
+			}
+		}
+	}
+
+	image2 = image;
+	free(DitherMatrix);
+	return ErrorCode;
 
 }

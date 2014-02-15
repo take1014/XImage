@@ -21,6 +21,7 @@ class DLL_CEXPORT XImage{
 		int MakeHistgramImage();		// ヒストグラムイメージ作成関数
 		int LinerTransformation();		// ヒストグラムの線形変換を行ったイメージを出力する関数
 		int SmoothImage(int GrayLevel);		// ヒストグラムを平滑化したイメージを出力する
+		int MakeDitherImage(int DitherType);	// 組織的ディザ法による疑似階調変換
 };
 
 #endif
